@@ -4,12 +4,14 @@ var stopSpeed = PlayerStats.stopSpeed
 var maxSpeed = PlayerStats.maxSpeed
 var acceleration = PlayerStats.acceleration
 var jumpSpeed = PlayerStats.jumpSpeed
-var maxJumps = PlayerStats.maxJumps
+var canNoGravity = PlayerStats.canNoGravity
+var noGravityMax = PlayerStats.noGravityMax
+var noGravityTimer = 0
 var speed = 0
 var velocity = Vector2()
-var storedJumps = 0
 var airTime = 0
 var floorState = false
+var noGravity = false
 
 
 onready var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -19,11 +21,10 @@ func update_status():
 	maxSpeed = PlayerStats.maxSpeed
 	acceleration = PlayerStats.acceleration
 	jumpSpeed = PlayerStats.jumpSpeed
-	maxJumps = PlayerStats.maxJumps	
 
 
 func _physics_process(delta):
-	
+	update_status()
 	
 	if Input.is_action_pressed("PlayerRight"):
 		if velocity.x < maxSpeed:
@@ -47,26 +48,28 @@ func _physics_process(delta):
 		else:
 			velocity.x = 0
 	
-
-	# Vertical movement code. Apply gravity.
-	velocity.y += gravity * delta
-	velocity.y += airTime
-	#if 0 < velocity.y and velocity.y < 1000:
-	#	velocity.y += velocity.y / 10
-	# Move based on the velocity and snap to the ground.
+	if !noGravity:
+		velocity.y += gravity * delta
+		velocity.y += airTime
+	else:
+		noGravityTimer += 1
+		if noGravityTimer >= noGravityMax:
+			noGravity = false
+			airTime = 0
 	velocity = move_and_slide(velocity, Vector2.UP)
 	
-	floorState = is_on_floor()
-	if floorState:
+	if is_on_floor():
+		if  noGravityTimer > 0:
+			noGravityTimer -= 1
 		airTime = 0
-		if storedJumps < maxJumps:
-			storedJumps = maxJumps
-	else:
-		if airTime < 100:
-			airTime += 1
+	elif airTime < 100:
+		airTime += 1
 	if Input.is_action_just_pressed("PlayerUp"):
-		if storedJumps > 0 or floorState:
+		if is_on_floor():
 			velocity.y = -jumpSpeed
-			if storedJumps > 0 and !floorState:
-				storedJumps -= 1
-				airTime -= 10
+		elif !noGravity and noGravityTimer < noGravityMax:
+			noGravity = true
+	if Input.is_action_just_released("PlayerUp"):
+		if noGravity:
+			noGravity = false
+			airTime = 0

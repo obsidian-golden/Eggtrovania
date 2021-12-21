@@ -4,8 +4,8 @@ var stopSpeed = 60
 var maxSpeed = 450
 var acceleration = 60
 var jumpSpeed = 700
-var maxJumps = 1
-var runningJumpBoost = 10
+var canNoGravity = false
+var noGravityMax = 60
 # Declare member variables here. Examples:
 # var a = 2
 # var b = "text"
